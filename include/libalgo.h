@@ -7,5 +7,6 @@
 
 #include "data_types.h"
 #include "list.h"
+#include "stack.h"
 
 #endif //LIBALGO_LIBALGO_H

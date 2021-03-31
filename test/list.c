@@ -3,7 +3,7 @@
 #include "../include/utils.h"
 
 #define KGRN  "\x1B[32m"
-#define LIST_LENGTH 50000
+#define LIST_LENGTH 1000
 
 #include <string.h>
 #include <stdlib.h>

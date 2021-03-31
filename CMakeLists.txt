@@ -5,9 +5,8 @@ include(GNUInstallDirs)
 # create library
 add_library(${PROJECT_NAME} SHARED
         src/list.c
-        src/string.c
-        src/data_types.c
-        )
+        src/stack.c
+        src/data_types.c)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER include/${PROJECT_NAME}.h)
