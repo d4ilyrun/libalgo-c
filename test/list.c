@@ -1,5 +1,8 @@
+//
+// Created by LEO on 2021-03-31.
+//
+
 #include "../include/list.h"
-#include "../include/stack.h"
 #include "../include/utils.h"
 
 #define KGRN  "\x1B[32m"
@@ -9,16 +12,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void f(void *data)
-{
-    int i = *(int *)data;
-    i += 1;
-    memcpy(data, &i, sizeof (int));
-}
-
 int compare(void *a, void *b)
 {
-    return *(int *)a >= *(int *)b;
+    return *(int *)a > *(int *)b;
 }
 
 void print(void *data)
@@ -28,32 +24,38 @@ void print(void *data)
 
 int main(int argc, char **argv)
 {
-    list_t *list = list_create(sizeof(int));
+    list_t *list = list_create(LIST_LENGTH, sizeof(int));
     list->compare = compare;
-    int test;
 
-    for (int i = 0; i <= LIST_LENGTH; ++i) {
-        list_append(list, &i);
+    int buf;
+
+    for (int i = 0; i < list->length; ++i)
+        list_insert(list, i, &i);
+
+    list_t *copy = list_copy(list);
+    int buf_copy;
+
+    for (int i = 0; i < list->length; ++i) {
+        list_peek(list, i, &buf);
+        list_peek(copy, i, &buf_copy);
+        ASSERT_RETURN(buf == i, 1);
+        ASSERT_RETURN(buf == buf_copy, 1);
     }
-
-    list_t *mapped = list_map(list, f);
-
-    for (int i = LIST_LENGTH; i >= LIST_LENGTH - 2; --i) {
-        list_pop_last(list, &test);
-        ASSERT_RETURN(test == i, 1);
-        list_pop_last(mapped, &test);
-        ASSERT_RETURN(test == i + 1, 1);
-    }
-
-    int wait;
 
     list_reverse(list);
-    list_sort(list);
+    for (int i = 0; i < list->length; ++i) {
+        list_peek(list, i, &buf);
+        ASSERT_RETURN(buf == LIST_LENGTH - i - 1, 1);
+    }
 
-    list_pop(list, 2, &test);
-    ASSERT_RETURN(test == 2, 1);
+    list_sort(list);
+    for (int i = 0; i < list->length; ++i) {
+        list_peek(list, i, &buf);
+        ASSERT_RETURN(buf == i, 1);
+    }
 
     list_free(list);
+    list_free(copy);
 
     printf("%sTEST: list_t.c : ALL TESTS PASSED SUCCESSFULLY !\n", KGRN);
 

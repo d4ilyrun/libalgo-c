@@ -4,6 +4,7 @@ include(GNUInstallDirs)
 
 # create library
 add_library(${PROJECT_NAME} SHARED
+        src/linked_list.c
         src/list.c
         src/stack.c
         src/data_types.c)

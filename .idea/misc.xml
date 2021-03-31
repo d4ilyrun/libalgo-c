@@ -4,19 +4,21 @@
   <component name="CidrRootsConfiguration">
     <sourceRoots>
       <file path="$PROJECT_DIR$/include" />
+      <file path="$PROJECT_DIR$/src" />
     </sourceRoots>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="MakefileSettings">
     <option name="linkedExternalProjectsSettings">
       <MakefileProjectSettings>
+        <option name="buildTarget" value="" />
+        <option name="cleanTarget" value="" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
+            <option value="\\wsl$\Ubuntu-20.04\home\leo\Documents\C\libalgo-c" />
           </set>
         </option>
-        <option name="switches" value="-C test" />
         <option name="version" value="2" />
       </MakefileProjectSettings>
     </option>

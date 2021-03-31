@@ -5,4 +5,5 @@ function(add_test_suite _testName _source)
 endfunction()
 
 add_test_suite(list_tests list.c)
+add_test_suite(linked_list_tests linked_list.c)
 add_test_suite(stack_tests stack.c)

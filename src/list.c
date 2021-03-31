@@ -1,5 +1,5 @@
 //
-// Created by leo on 3/25/21.
+// Created by LEO on 2021-03-31.
 //
 
 #include "../include/list.h"
@@ -7,313 +7,146 @@
 
 #include <string.h>
 
-void default_free(void *);
-int default_compare(void *, void *);
+static int default_compare(void *, void *);
 
-/**
- * <br>Create an empty list
- * @param size_of_type
- * @return the new list's address
- */
-list_t *list_create(size_t size_of_type)
+list_t *list_create(size_t len, size_t size_of_type)
 {
-    ASSERT_RETURN(size_of_type > 0, NULL);
+    list_t *list = malloc(sizeof (list_t));
+    list->length = len;
+    list->type = data_type(size_of_type);
+    list->list = malloc(len * size_of_type);
+    list->compare = default_compare;
 
-    Type type = data_type(size_of_type);
-    list_t *new_list = malloc(sizeof(list_t));
-
-    *new_list = (list_t) {
-        .type = type,
-        .length = 0,
-        .head = NULL,
-        .tail = NULL,
-        .free = default_free,
-        .compare = default_compare
-    };
-
-    return new_list;
+    return list;
 }
 
-/**
- * <br>Append data at the end of a list.
- * @param list
- * @param data
- * @return the address of the node containing the new data
- */
-node_t *list_append(list_t *list, void *data)
+void *list_insert(list_t *list, size_t index, void *data)
 {
-    node_t *node = node_create(data, list->type);
+    ASSERT_RETURN(index < list->length, NULL);
 
-    if (!list->length)
-        list->head = node;
-    else {
-        node->prev = list->tail;
-        list->tail->next = node;
-    }
+    void *data_at_index = list->list + (index * list->type.size);
+    memcpy(data_at_index, data, list->type.size);
 
-    list->tail = node;
-    list->length += 1;
-
-    return node;
+    return data_at_index;
 }
 
-/**
- * <br>Insert data at a given index at the end of a list.
- * @param list
- * @param index
- * @param data
- * @return the address of the node containing the new data
- */
-node_t *list_insert(list_t *list, int index, void *data)
+void *list_peek(list_t *list, size_t index, void *out)
 {
-    if (index == list->length)
-        return list_append(list, data);
+    ASSERT_RETURN(index < list->length, NULL);
+    void *data_at_index = list->list + (index * list->type.size);
 
-    node_t *data_node = node_create(data, list->type);
-
-    if (!index) {
-        data_node->next = list->head;
-        list->head = data_node;
-    } else {
-        node_t *node = list_node_at_index(list, index);
-        if (node->prev)
-            node->prev->next = data_node;
-        data_node->prev = node->prev;
-        node->prev = data_node;
-    }
-
-    list->length += 1;
-    return data_node;
+    if (out)
+        memcpy(out, data_at_index, list->type.size);
+    return data_at_index;
 }
 
-/**
- * <br>Create a new node containing a data of type 'type'
- * @param data
- * @param type
- * @return the address of the created node
- */
-node_t *node_create(void *data, Type type)
-{
-    node_t *node = malloc(sizeof(node_t));
-    *node = (node_t) {
-        .data = malloc(type.size),
-        .next = NULL,
-        .prev = NULL
-    };
-
-    memcpy(node->data, data, type.size);
-
-    return node;
-}
-
-/**
- * <br>Retrieve data from a node.
- * @param node
- * @param type
- * @param out pointer storing the output value. A new memory space will be allocated if NULL.
- * @return the output address
- */
-void *node_get(node_t *node, Type type, void *out)
-{
-    if (out == NULL)
-        out = malloc(type.size);
-    memcpy(out, node->data, type.size);
-
-    return out;
-}
-
-/**
- * <br>Pops a data at a given index from a list.
- * @param list
- * @param index
- * @param out pointer storing the output value. A new memory space will be allocated if NULL.
- * @return the output address
- */
-void *list_pop(list_t *list, int index, void *out)
-{
-    node_t *node = list_node_at_index(list, index);
-
-    if (!node)
-        return NULL;
-
-    // if no next node : node was the list's tail
-    if (!node->next)
-        list->tail = node->prev;
-    else
-        node->next->prev = node->prev;
-
-    // if no prev node : node was the list's head
-    if (!node->prev)
-        list->head = node->next;
-    else
-        node->prev->next = node->next;
-
-    node_get(node, list->type, out);
-    free(node);
-
-    list->length -= 1;
-    return out;
-}
-
-/**
- * <br>Pops the last value of a list.
- * @param list
- * @param out pointer storing the output value. A new memory space will be allocated if NULL.
- * @return the output address
- */
-void *list_pop_last(list_t *list, void *out)
-{
-    return list_pop(list, list->length - 1, out);
-}
-
-/**
- * <br>Applies given function to every data in the list.
- * @param list
- * @param f
- */
 void list_foreach(list_t *list, void (*f)(void *))
 {
-    for (node_t *node = list->head; node != NULL; node = node->next) {
-        f(node->data);
+    void *p_list = list->list;
+
+    for (size_t i = 0; i < list->length; ++i) {
+        f(p_list);
+        p_list += list->type.size;
     }
 }
 
-/**
- * <br>Create a new list containing the result of a function for every data of the original list.
- * @param list
- * @param f
- * @return the address of the newly created list
- */
 list_t *list_map(list_t *list, void (*f)(void *))
 {
-    list_t *mapped = list_create(list->type.size);
+    list_t *mapped = list_create(list->length, list->type.size);
+    void *p_list = list->list, *p_mapped = mapped->list;
 
-    for (node_t *node = list->head; node != NULL; node = node->next) {
-        list_append(mapped, node->data);
-        f(mapped->tail->data);
+    for (size_t i = 0; i < list->length; ++i) {
+        memcpy(p_mapped, p_list, list->type.size);
+        f(p_mapped);
+        p_mapped += list->type.size;
+        p_list += list->type.size;
     }
 
-    mapped->type = list->type;
-    mapped->free = list->free;
     mapped->compare = list->compare;
+    mapped->free = list->free;
 
     return mapped;
 }
 
-/**
- * <br>Free an entire list
- * @param list
- */
 void list_free(list_t *list)
 {
-    node_t *node = list->head;
-    node_t *tmp = NULL;
+    if (list->free) {
+        void *p_list = list->list;
 
-    while (node != NULL) {
-        tmp = node;
-        node = node->next;
-        list->free(tmp->data);
-        free(tmp);
-    }
-
-    list->head = NULL;
-    list->tail = NULL;
-    free(list);
-}
-
-/**
- * <br> Return the data at a given index on a list.
- * <br> Similar to `list_pop` but the data will not be removed from the list.
- * @param list
- * @param index
- * @return the original data pointer
- */
-void *list_index(list_t *list, size_t index)
-{
-    node_t *node = list_node_at_index(list, index);
-
-    return node ? node->data : NULL;
-}
-
-/**
- * <br> Return the node at a given index in a list
- * @param list
- * @param index
- * @return the original node pointer
- */
-node_t *list_node_at_index(list_t *list, size_t index)
-{
-    ASSERT_RETURN(index >= 0, NULL);
-    ASSERT_RETURN(index < list->length, NULL);
-
-    node_t *node;
-
-    if (index > list->length / 2) {
-        node = list->tail;
-        for (int i = list->length - 1; i > index; --i)
-            node = node->prev;
-        return node;
-    }
-
-    node = list->head;
-    for (int i = 0; i < index; ++i)
-        node = node->next;
-
-    return node;
-}
-
-/**
- * <br> Sorts a list using a shaker-sort implementation
- * @param list
- */
-void list_sort(list_t *list)
-{
-    int start = 0;
-    int end = list->length - 1;
-    bool sorted = false;
-    node_t *node, *next;
-
-    while (!sorted && end >= start) {
-        sorted = true;
-        node = list_node_at_index(list, start);
-        for (int i = start; i < end; i++) {
-            if (list->compare(node->data, node->next->data)) {
-                SWAP(node->data, node->next->data);
-                sorted = false;
-            }
-            node = node->next;
+        for (size_t i = 0; i < list->length; ++i) {
+            list->free(p_list);
+            p_list += list->type.size;
         }
-        for (int i = --end; i >= start; --i) {
-            if (list->compare(node->prev->data, node->data)) {
-                SWAP(node->data, node->prev->data);
-                sorted = false;
-            }
-            node = node->prev;
-        }
-        ++start;
     }
+
+    free(list->list);
 }
 
-/**
- * <br> Reverse a list in place
- * @param list
- */
+void swap_ptr(void *a, void *b, void *tmp, size_t size) {
+    memcpy(tmp, a,size);
+    memcpy(a, b, size);
+    memcpy(b, tmp, size);
+}
+
 void list_reverse(list_t *list)
 {
-    node_t *a, *b;
+    void *p_start = list->list;
+    void *p_end = p_start + list->type.size * (list->length - 1) ;
+    void *tmp = malloc(list->type.size);
 
-    for (int i = 0; i < list->length / 2; ++i) {
-        a = list_node_at_index(list, i);
-        b = list_node_at_index(list, list->length - 1 - i);
-        SWAP(a->data, b->data);
+    for (size_t i = 0; i < list->length / 2; ++i) {
+        swap_ptr(p_start, p_end, tmp, list->type.size);
+        p_start += list->type.size;
+        p_end -= list->type.size;
+    }
+
+    free(tmp);
+}
+
+void list_sort(list_t *list)
+{
+    bool sorted = false;
+    int start = 0, end = list->length - 1;
+    void *tmp = malloc(list->type.size);
+    void *p_list;
+
+    while (!sorted && start <= end){
+        sorted = true;
+        p_list = list->list + start * list->type.size;
+        for (int i = start; i < end; ++i) {
+            if (list->compare(p_list, p_list + list->type.size)) {
+                swap_ptr(p_list, p_list + list->type.size, tmp, list->type.size);
+                sorted = false;
+            }
+            p_list += list->type.size;
+        }
+        end -= 1;
+        for (int i = end; i >= start; --i) {
+            if (list->compare(p_list - list->type.size, p_list)) {
+                swap_ptr(p_list - list->type.size, p_list, tmp, list->type.size);
+                sorted = false;
+            }
+            p_list -= list->type.size;
+        }
+        start += 1;
     }
 }
 
-void default_free(void *data) { free(data); }
-
-int default_compare(void *a, void *b)
+list_t *list_copy(list_t *list)
 {
-    fprintf(stderr, "ERROR: trying to compare element of a list_t "
+    list_t *copy = malloc(sizeof (list_t));
+    *copy = *list;
+
+    copy->list = malloc(list->length * list->type.size);
+    memcpy(copy->list, list->list, list->length * list->type.size);
+
+    return copy;
+}
+
+static int default_compare(void *a, void *b)
+{
+    fprintf(stderr, "ERROR: trying to compare element of a l_list_t "
                     "without properly setting a comparing function first.\n");
     return FALSE;
 }
+

@@ -7,7 +7,7 @@
 
 #include "../include/list.h"
 
-typedef list_t stack_t;
+typedef l_list_t stack_t;
 
 stack_t *stack_create(size_t size_of_type);
 node_t  *stack_push(stack_t *stack, void *data);
